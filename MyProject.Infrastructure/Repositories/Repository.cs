@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MyProject.Core.Interfaces;
@@ -42,9 +43,26 @@ namespace MyProject.Infrastructure.Repositories
             return await _dbSet.FindAsync(id);
         }
 
+
         public async Task UpdateAsync(T entity)
         {
             _dbSet.Update(entity);
+        }
+
+        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.Where(predicate).ToListAsync();
+        }
+
+        public async Task<(IEnumerable<T> Items, int TotalCount)> GetPaginatedAsync(
+            Expression<Func<T, bool>> predicate, int pageNumber=1, int pageSize=10)
+        {
+            var query = _dbSet.Where(predicate);
+
+            var totalCount = await query.CountAsync();
+            var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+            return (items, totalCount);
         }
     }
 }

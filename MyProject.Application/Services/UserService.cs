@@ -1,23 +1,26 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
+using AutoMapper;
+using MyProject.Application.DTOs;
 using MyProject.Core.Entities;
 using MyProject.Core.Interfaces;
 
 namespace MyProject.Application.Services
 {
-    public class UserService
+    public class UserService : BaseService
     {
-        private readonly IUnitOfWork _unitOfWork;
-
-        public UserService(IUnitOfWork unitOfWork)
+        public UserService(IUnitOfWork unitOfWork, IMapper mapper) : base(unitOfWork,mapper)
         {
-            _unitOfWork = unitOfWork;
         }
-        public async Task<IEnumerable<User>> GetAllUsersAsync()
+
+        public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
         {
-            return await _unitOfWork.GetRepository<User>().GetAllAsync();
+            var result = await _unitOfWork.GetRepository<User>().GetAllAsync();
+            var usersDto = _mapper.Map<IEnumerable<UserDto>>(result);
+            return usersDto;
         }
 
         public async Task<User> GetUserByIdAsync(int id)
@@ -25,9 +28,11 @@ namespace MyProject.Application.Services
             return await _unitOfWork.GetRepository<User>().GetByIdAsync(id);
         }
 
-        public async Task<User> GetUserWithRolesAsync(int id)
+        public async Task<IEnumerable<User>> GetUsersByRoleIdAsync(int roleId)
         { //değişecek
-            return await _unitOfWork.GetRepository<User>().GetByIdAsync(id);;
+            Expression<Func<User, bool>> filter = u => u.UserRoles.Any(ur => ur.RoleId == roleId);
+            var userRepository = _unitOfWork.GetRepository<User>();
+            return await userRepository.FindAsync(filter);
         }
 
         public async Task AddUserAsync(User user)

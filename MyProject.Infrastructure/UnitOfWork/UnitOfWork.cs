@@ -20,18 +20,7 @@ namespace MyProject.Infrastructure.UnitOfWork
             _context = context;
             _repositories = new ConcurrentDictionary<string, object>();
         }
-
-        public IUserRepository GetUserRepository()
-        {
-            if (!_repositories.ContainsKey(nameof(User)))
-            {
-                var repositoryInstance = new UserRepository(_context);
-                _repositories[nameof(User)] = repositoryInstance;
-            }
-
-            return (IUserRepository)_repositories[nameof(User)];
-        }
-
+        
         public IRepository<T> GetRepository<T>() where T : class
         {
             var type = typeof(T).Name;

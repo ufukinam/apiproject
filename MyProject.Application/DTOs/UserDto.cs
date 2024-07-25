@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MyProject.Core.Entities
+namespace MyProject.Application.DTOs
 {
-    public class Page : BaseEntity
+    public class UserDto
     {
         public int Id { get; set; }
+        public string Email { get; set; }
         public string Name { get; set; }
-        public int Order { get; set; }
-        public ICollection<RolePage> RolePages { get; set; }
+        public string Surname { get; set; }
     }
 }

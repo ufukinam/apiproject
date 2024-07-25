@@ -1,7 +1,13 @@
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using MyProject.Application.Mapping;
+using MyProject.Application.Services;
+
 //using MyProject.Application.Services;
 using MyProject.Core.Interfaces;
 using MyProject.Infrastructure.Data;
+using MyProject.Infrastructure.Repositories;
+using MyProject.Infrastructure.UnitOfWork;
 //using MyProject.Infrastructure.Repositories;
 //using MyProject.Infrastructure.UnitOfWork;
 
@@ -13,22 +19,34 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-//builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 //builder.Services.AddScoped<IUserRepository, UserRepository>();
 //builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-//builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-//builder.Services.AddScoped<UserService>();
-//builder.Services.AddScoped<RoleService>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<RoleService>();
+builder.Services.AddScoped<PageService>();
+
+// Register AutoMapper
+builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
+
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseSwagger();
+    app.UseSwaggerUI();
     app.UseDeveloperExceptionPage();
 }
 
 app.UseHttpsRedirection();
+
+app.UseRouting();
 
 app.UseAuthorization();
 
