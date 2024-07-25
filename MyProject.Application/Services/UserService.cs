@@ -27,7 +27,7 @@ namespace MyProject.Application.Services
 
         public async Task<User> GetUserWithRolesAsync(int id)
         { //değişecek
-            return await _unitOfWork.GetRepository<U>().GetByIdAsync(id);;
+            return await _unitOfWork.GetRepository<User>().GetByIdAsync(id);;
         }
 
         public async Task AddUserAsync(User user)
