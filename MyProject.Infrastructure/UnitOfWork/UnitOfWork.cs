@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MyProject.Core.Entities;
 using MyProject.Core.Interfaces;
 using MyProject.Infrastructure.Data;
 using MyProject.Infrastructure.Repositories;
@@ -18,6 +19,17 @@ namespace MyProject.Infrastructure.UnitOfWork
         {
             _context = context;
             _repositories = new ConcurrentDictionary<string, object>();
+        }
+
+        public IUserRepository GetUserRepository()
+        {
+            if (!_repositories.ContainsKey(nameof(User)))
+            {
+                var repositoryInstance = new UserRepository(_context);
+                _repositories[nameof(User)] = repositoryInstance;
+            }
+
+            return (IUserRepository)_repositories[nameof(User)];
         }
 
         public IRepository<T> GetRepository<T>() where T : class
