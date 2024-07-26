@@ -20,30 +20,30 @@ namespace MyProject.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var roles = await _pageService.GetAllPagesAsync();
-            return Ok(roles);
+            var pages = await _pageService.GetAllPagesAsync();
+            return Ok(pages);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var role = await _pageService.GetPageByIdAsync(id);
-            if (role == null)
+            var page = await _pageService.GetPageByIdAsync(id);
+            if (page == null)
             {
                 return NotFound();
             }
-            return Ok(role);
+            return Ok(page);
         }
 
         [HttpGet("{id}/pages")]
-        public async Task<IActionResult> GetPagesByRoleId(int id)
+        public async Task<IActionResult> GetPagesByPageId(int id)
         {
-            var role = await _pageService.GetPagesByRoleIdAsync(id);
-            if (role == null)
+            var page = await _pageService.GetPagesByRoleIdAsync(id);
+            if (page == null)
             {
                 return NotFound();
             }
-            return Ok(role);
+            return Ok(page);
         }
 
         [HttpPost]

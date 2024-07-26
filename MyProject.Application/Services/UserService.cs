@@ -17,7 +17,8 @@ namespace MyProject.Application.Services
 
         public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
         {
-            var result = await _userRepository.GetAllAsync();
+            Expression<Func<User, bool>> filter = u => u.IsDeleted == false;
+            var result = await _userRepository.FindAsync(filter);
             var usersDto = _mapper.Map<IEnumerable<UserDto>>(result);
             return usersDto;
         }

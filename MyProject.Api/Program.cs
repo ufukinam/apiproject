@@ -12,6 +12,7 @@ using MyProject.Infrastructure.Repositories;
 using MyProject.Infrastructure.UnitOfWork;
 using MyProject.Application;
 using System.Text;
+using Microsoft.OpenApi.Models;
 //using MyProject.Infrastructure.Repositories;
 //using MyProject.Infrastructure.UnitOfWork;
 
@@ -24,7 +25,40 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "MyProject API", Version = "v1" });
+
+    // Configure Swagger to use Bearer Authentication
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Please enter JWT Bearer token in the format **Bearer {your token here}**"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] { }
+        }
+    });
+
+    // Add JWT examples (optional)
+    //c.ExampleFilters();
+});
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 //builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -44,11 +78,7 @@ builder.Services.AddSingleton<JwtHelper>();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"]!);
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
