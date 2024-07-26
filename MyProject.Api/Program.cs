@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using MyProject.Application.Mapping;
@@ -8,6 +10,8 @@ using MyProject.Core.Interfaces;
 using MyProject.Infrastructure.Data;
 using MyProject.Infrastructure.Repositories;
 using MyProject.Infrastructure.UnitOfWork;
+using MyProject.Application;
+using System.Text;
 //using MyProject.Infrastructure.Repositories;
 //using MyProject.Infrastructure.UnitOfWork;
 
@@ -33,6 +37,31 @@ builder.Services.AddScoped<PageService>();
 // Register AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
+// Register JwtHelper
+builder.Services.AddSingleton<JwtHelper>();
+
+// Configure JWT authentication
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"]!);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(key)
+    };
+});
 
 var app = builder.Build();
 
@@ -45,11 +74,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseRouting();
-
+app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

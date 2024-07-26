@@ -8,26 +8,26 @@ namespace MyProject.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class RolesController : ControllerBase
+    public class PagesController : ControllerBase
     {
-        private readonly RoleService _roleService;
+        private readonly PageService _pageService;
 
-        public RolesController(RoleService roleService)
+        public PagesController(PageService pageService)
         {
-            _roleService = roleService;
+            _pageService = pageService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var roles = await _roleService.GetAllRolesAsync();
+            var roles = await _pageService.GetAllPagesAsync();
             return Ok(roles);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var role = await _roleService.GetRoleByIdAsync(id);
+            var role = await _pageService.GetPageByIdAsync(id);
             if (role == null)
             {
                 return NotFound();
@@ -35,10 +35,10 @@ namespace MyProject.Api.Controllers
             return Ok(role);
         }
 
-        [HttpGet("{id}/roles")]
-        public async Task<IActionResult> GetRolesByUserId(int id)
+        [HttpGet("{id}/pages")]
+        public async Task<IActionResult> GetPagesByRoleId(int id)
         {
-            var role = await _roleService.GetRolesByUserIdAsync(id);
+            var role = await _pageService.GetPagesByRoleIdAsync(id);
             if (role == null)
             {
                 return NotFound();
@@ -47,27 +47,27 @@ namespace MyProject.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(Role role)
+        public async Task<IActionResult> Create(Page page)
         {
-            await _roleService.AddRoleAsync(role);
-            return CreatedAtAction(nameof(GetById), new { id = role.Id }, role);
+            await _pageService.AddPageAsync(page);
+            return CreatedAtAction(nameof(GetById), new { id = page.Id }, page);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Role role)
+        public async Task<IActionResult> Update(int id, Page page)
         {
-            if (id != role.Id)
+            if (id != page.Id)
             {
                 return BadRequest();
             }
-            await _roleService.UpdateRoleAsync(role);
+            await _pageService.UpdatePageAsync(page);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _roleService.DeleteRoleAsync(id);
+            await _pageService.DeletePageAsync(id);
             return NoContent();
         }
     }
