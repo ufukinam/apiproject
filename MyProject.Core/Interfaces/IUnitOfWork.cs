@@ -4,6 +4,6 @@ namespace MyProject.Core.Interfaces
     {
         Task<int> CompleteAsync();
         IRepository<T> GetRepository<T>() where T : class;
-        Task ExecuteInTransactionAsync(Func<Task> action);
+        //Task ExecuteInTransactionAsync(Func<Task> action);
     }
 }

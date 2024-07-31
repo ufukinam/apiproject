@@ -29,10 +29,34 @@ namespace MyProject.Infrastructure.Repositories
             }
         }
 
-        public async Task<IEnumerable<T>> GetAllAsync()
+        public async Task<IEnumerable<T>> GetAsync(
+            Expression<Func<T, bool>> filter = null,
+            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
+            string includeProperties = "")
         {
-            return await _dbSet.ToListAsync();
+            IQueryable<T> query = _dbSet;
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            foreach (var includeProperty in includeProperties.Split
+                (new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                query = query.Include(includeProperty);
+            }
+
+            if (orderBy != null)
+            {
+                return await orderBy(query).ToListAsync();
+            }
+            else
+            {
+                return await query.ToListAsync();
+            }
         }
+
 
         public async Task<T> GetByIdAsync(int id)
         {
@@ -45,20 +69,40 @@ namespace MyProject.Infrastructure.Repositories
             _dbSet.Update(entity);
         }
 
-        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
-        {
-            return await _dbSet.Where(predicate).ToListAsync();
-        }
-
         public async Task<(IEnumerable<T> Items, int TotalCount)> GetPaginatedAsync(
-            Expression<Func<T, bool>> predicate, int pageNumber=1, int pageSize=10)
+            Expression<Func<T, bool>> filter = null,
+            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
+            string includeProperties = "", 
+            int pageNumber=1, int pageSize=10)
         {
-            var query = _dbSet.Where(predicate);
+            IQueryable<T> query = _dbSet;
 
-            var totalCount = await query.CountAsync();
-            var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
 
-            return (items, totalCount);
+            foreach (var includeProperty in includeProperties.Split
+                (new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                query = query.Include(includeProperty);
+            }
+
+            if (orderBy != null)
+            {
+                
+                query = orderBy(query);
+                var totalCount = await query.CountAsync();
+                var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+                return (items, totalCount);
+            }
+            else
+            {
+                var totalCount = await query.CountAsync();
+                var items = await query.ToListAsync();
+                return (items, totalCount);
+            }
         }
     }
 }

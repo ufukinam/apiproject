@@ -18,7 +18,8 @@ namespace MyProject.Application.Services
         public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
         {
             Expression<Func<User, bool>> filter = u => u.IsDeleted == false;
-            var result = await _userRepository.FindAsync(filter);
+            Func<IQueryable<User>, IOrderedQueryable<User>> orderBy = q=> q.OrderBy(a=>a.Id);
+            var result = await _userRepository.GetAsync(filter: filter, orderBy: orderBy);
             var usersDto = _mapper.Map<IEnumerable<UserDto>>(result);
             return usersDto;
         }
@@ -31,7 +32,7 @@ namespace MyProject.Application.Services
         public async Task<IEnumerable<User>> GetUsersByRoleIdAsync(int roleId)
         { //değişecek
             Expression<Func<User, bool>> filter = u => u.UserRoles.Any(ur => ur.RoleId == roleId);
-            return await _userRepository.FindAsync(filter);
+            return await _userRepository.GetAsync(filter: filter);
         }
 
         public async Task AddUserAsync(User user)
@@ -71,7 +72,7 @@ namespace MyProject.Application.Services
         public async Task<UserDto> AuthenticateAsync(string email, string password)
         {
             Expression<Func<User, bool>> filter = u => u.Email == email;
-            var users = await _userRepository.FindAsync(filter);
+            var users = await _userRepository.GetAsync(filter: filter);
             
             // If you have hashed passwords, you should compare the hashed values here
             // if (user != null && VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))

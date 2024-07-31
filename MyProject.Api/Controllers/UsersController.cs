@@ -7,7 +7,6 @@ namespace MyProject.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly UserService _userService;
@@ -16,7 +15,8 @@ namespace MyProject.Api.Controllers
         {
             _userService = userService;
         }
-
+        
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {

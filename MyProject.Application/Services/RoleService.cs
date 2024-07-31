@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using AutoMapper;
+using MyProject.Application.DTOs;
 using MyProject.Core.Entities;
 using MyProject.Core.Interfaces;
 
@@ -7,48 +8,51 @@ namespace MyProject.Application.Services
 {
     public class RoleService : BaseService
     {
+        IRepository<Role> _roleRepository;
         public RoleService(IUnitOfWork unitOfWork, IMapper mapper) : base(unitOfWork,mapper)
         {
+            _roleRepository = _unitOfWork.GetRepository<Role>();
         }
 
-        public async Task<IEnumerable<Role>> GetAllRolesAsync()
+        public async Task<IEnumerable<RoleDto>> GetAllRolesAsync()
         {
-            return await _unitOfWork.GetRepository<Role>().GetAllAsync();
+            Expression<Func<Role, bool>> filter = u => u.IsDeleted == false;
+            Func<IQueryable<Role>, IOrderedQueryable<Role>> orderBy = q=> q.OrderBy(a=>a.Id);
+            var result = await _roleRepository.GetAsync(filter: filter, orderBy: orderBy);
+            var rolesDto = _mapper.Map<IEnumerable<RoleDto>>(result);
+            return rolesDto;
         }
 
         public async Task<Role> GetRoleByIdAsync(int id)
         {
-            return await _unitOfWork.GetRepository<Role>().GetByIdAsync(id);
+            return await _roleRepository.GetByIdAsync(id);
         }
 
         public async Task<IEnumerable<Role>> GetRolesByUserIdAsync(int userId)
         { //değişecek
-            Expression<Func<Role, bool>> filter = r => r.UserRoles.Any(ur => ur.UserId == userId);
-            var roleRepository = _unitOfWork.GetRepository<Role>();
-            return await roleRepository.FindAsync(filter);
+            Expression<Func<Role, bool>> filter = u => u.UserRoles.Any(ur => ur.RoleId == userId);
+            return await _roleRepository.GetAsync(filter: filter);
         }
 
         public async Task AddRoleAsync(Role role)
         {
-            var roleRepository = _unitOfWork.GetRepository<Role>();
-            await roleRepository.AddAsync(role);
+            await _roleRepository.AddAsync(role);
             await _unitOfWork.CompleteAsync();
         }
 
         public async Task UpdateRoleAsync(Role role)
         {
-            var roleRepository = _unitOfWork.GetRepository<Role>();
-            await roleRepository.UpdateAsync(role);
+            await _roleRepository.UpdateAsync(role);
             await _unitOfWork.CompleteAsync();
         }
 
         public async Task DeleteRoleAsync(int id)
         {
-            var roleRepository = _unitOfWork.GetRepository<Role>();
-            var role = roleRepository.GetByIdAsync(id);
+            var role = _roleRepository.GetByIdAsync(id);
+            
             if (role != null)
             {
-                await roleRepository.DeleteAsync(id);
+                await _roleRepository.DeleteAsync(id);
                 await _unitOfWork.CompleteAsync();
             }
         }

@@ -1,5 +1,5 @@
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt; // Add this using directive
+using Microsoft.IdentityModel.JsonWebTokens; // Add this using directive
 using System.Security.Claims;
 using System.Text;
 
@@ -14,27 +14,33 @@ namespace MyProject.Application
             _configuration = configuration;
         }
 
-        public string GenerateJwtToken(string userId, string email)
+        public string GenerateJwtToken(string email)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
-            var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"]);
-            
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var tokenDescriptor = new SecurityTokenDescriptor
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!));
+
+            var claims = new Dictionary<string, object>
             {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                    new Claim(JwtRegisteredClaimNames.Sub, userId),
-                    new Claim(JwtRegisteredClaimNames.UniqueName, email)
-                }),
-                Expires = DateTime.UtcNow.AddHours(1),
-                Issuer = jwtSettings["Issuer"],
-                Audience = jwtSettings["Audience"],
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                [ClaimTypes.Email] = email,
+                [ClaimTypes.Sid] = "3c545f1c-cc1b-4cd5-985b-8666886f985b"
             };
 
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+            var tokenDescriptor = new Microsoft.IdentityModel.Tokens.SecurityTokenDescriptor
+                {
+                    Claims = claims,
+                    IssuedAt = null,
+                    NotBefore = DateTime.UtcNow,
+                    Expires = DateTime.Now.AddMinutes(30),
+                    Issuer = jwtSettings["Issuer"],
+                    Audience = jwtSettings["Audience"],
+                    SigningCredentials = new SigningCredentials(key, Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha256Signature)
+                };
+            
+            var handler = new Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler();
+            handler.SetDefaultTimesOnTokenCreation = false;
+
+            var tokenString = handler.CreateToken(tokenDescriptor);
+            return tokenString;
         }
     }
 }

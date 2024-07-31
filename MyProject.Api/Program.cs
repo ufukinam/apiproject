@@ -50,9 +50,12 @@ builder.Services.AddSwaggerGen(c =>
                 {
                     Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
-                }
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header
             },
-            new string[] { }
+            new List<string>()
         }
     });
 
@@ -61,8 +64,6 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-//builder.Services.AddScoped<IUserRepository, UserRepository>();
-//builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<RoleService>();
@@ -78,6 +79,9 @@ builder.Services.AddSingleton<JwtHelper>();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"]!);
 
+Console.WriteLine(jwtSettings["Issuer"]);
+Console.WriteLine(jwtSettings["Audience"]);
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
@@ -91,6 +95,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
+
+    options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine("Authentication failed: " + context.Exception.Message);
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("Token validated: " + context.SecurityToken);
+                return Task.CompletedTask;
+            }
+        };
 });
 
 var app = builder.Build();

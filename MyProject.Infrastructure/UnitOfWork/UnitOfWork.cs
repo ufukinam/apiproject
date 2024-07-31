@@ -33,22 +33,5 @@ namespace MyProject.Infrastructure.UnitOfWork
         {
             return await _context.SaveChangesAsync();
         }
-
-        public async Task ExecuteInTransactionAsync(Func<Task> action)
-        {
-            using (var transaction = await _context.Database.BeginTransactionAsync())
-            {
-                try
-                {
-                    await action();
-                    await transaction.CommitAsync();
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-            }
-        }
     }
 }
