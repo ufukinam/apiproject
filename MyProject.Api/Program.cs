@@ -69,6 +69,14 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<RoleService>();
 builder.Services.AddScoped<PageService>();
 
+builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowAllOrigins",
+            builder => builder.AllowAnyOrigin()
+                              .AllowAnyMethod()
+                              .AllowAnyHeader());
+    });
+
 // Register AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
@@ -119,10 +127,19 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
     app.UseDeveloperExceptionPage();
+    app.UseCors("AllowAll");
 }
 
 app.UseHttpsRedirection();
 app.UseRouting();
+// Log to confirm CORS middleware application
+    app.UseCors(builder =>
+    {
+        Console.WriteLine("Applying CORS policy");
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -21,8 +21,19 @@ namespace MyProject.Api.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginDto model)
         {
+            Console.WriteLine($"Received login request: Email={model.Email}, Password={model.Password}");
             if (!ModelState.IsValid)
+            {
+                foreach (var modelState in ModelState.Values)
+                {
+                    foreach (var error in modelState.Errors)
+                    {
+                        Console.WriteLine($"ModelState error: {error.ErrorMessage}");
+                    }
+                }
                 return BadRequest(ModelState);
+            }
+
 
             var userDto = await _userService.AuthenticateAsync(model.Email, model.Password);
 
@@ -37,6 +48,7 @@ namespace MyProject.Api.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] UserRegisterDto model)
         {
+            Console.WriteLine($"Received login request: Email={model.Email}, Password={model.Password}");
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 

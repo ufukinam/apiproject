@@ -14,7 +14,7 @@ namespace MyProject.Application
             _configuration = configuration;
         }
 
-        public string GenerateJwtToken(string email)
+        public string GenerateJwtToken(string userId, string email)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!));
