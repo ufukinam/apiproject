@@ -87,9 +87,6 @@ builder.Services.AddSingleton<JwtHelper>();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"]!);
 
-Console.WriteLine(jwtSettings["Issuer"]);
-Console.WriteLine(jwtSettings["Audience"]);
-
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {

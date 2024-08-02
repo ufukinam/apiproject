@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyProject.Application.DTOs;
 using MyProject.Application.Services;
 using MyProject.Core.Entities;
 
@@ -7,6 +8,7 @@ namespace MyProject.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly UserService _userService;
@@ -47,10 +49,13 @@ namespace MyProject.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(User user)
+        public async Task<IActionResult> Create(UserRegisterDto user)
         {
-            await _userService.AddUserAsync(user);
-            return CreatedAtAction(nameof(GetById), new { id = user.Id }, user);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var regUser = await _userService.RegisterAsync(user);
+            return Ok(new { User = regUser });
         }
 
         [HttpPut("{id}")]

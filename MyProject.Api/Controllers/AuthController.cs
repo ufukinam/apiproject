@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyProject.Application;
 using MyProject.Application.DTOs;
@@ -57,6 +58,14 @@ namespace MyProject.Api.Controllers
             var token = _jwtHelper.GenerateJwtToken(userDto.Id.ToString(), userDto.Email);
 
             return Ok(new { Token = token, User = userDto });
+        }
+
+        [HttpGet("roles")]
+        [Authorize]
+        public async Task<IActionResult> Roles()
+        {
+            var roles = "Admin";
+            return Ok(new { Role = roles});
         }
     }
 }

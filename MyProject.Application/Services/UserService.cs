@@ -49,7 +49,7 @@ namespace MyProject.Application.Services
 
         public async Task DeleteUserAsync(int id)
         {
-            var user = _userRepository.GetByIdAsync(id);
+            var user = await _userRepository.GetByIdAsync(id);
             if (user != null)
             {
                 await _userRepository.DeleteAsync(id);
