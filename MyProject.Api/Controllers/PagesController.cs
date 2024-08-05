@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyProject.Application.DTOs;
 using MyProject.Application.Services;
 using MyProject.Core.Entities;
 
@@ -47,14 +48,14 @@ namespace MyProject.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(Page page)
+        public async Task<IActionResult> Create(PageDto page)
         {
             await _pageService.AddPageAsync(page);
             return CreatedAtAction(nameof(GetById), new { id = page.Id }, page);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Page page)
+        public async Task<IActionResult> Update(int id, PageDto page)
         {
             if (id != page.Id)
             {

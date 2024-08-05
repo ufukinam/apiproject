@@ -34,14 +34,16 @@ namespace MyProject.Application.Services
             return await _pageRepository.GetAsync(filter: filter);
         }
 
-        public async Task AddPageAsync(Page page)
+        public async Task AddPageAsync(PageDto pageDto)
         {
+            var page = _mapper.Map<Page>(pageDto);
             await _pageRepository.AddAsync(page);
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task UpdatePageAsync(Page page)
+        public async Task UpdatePageAsync(PageDto pageDto)
         {
+            var page = _mapper.Map<Page>(pageDto);
             await _pageRepository.UpdateAsync(page);
             await _unitOfWork.CompleteAsync();
         }

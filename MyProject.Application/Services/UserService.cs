@@ -41,8 +41,16 @@ namespace MyProject.Application.Services
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task UpdateUserAsync(User user)
+        public async Task UpdateUserAsync(UserUpdateDto userUp)
         {
+            if(userUp.Password==null || userUp.Password==""){
+                var resUser = await _userRepository.GetByIdAsync(userUp.Id);
+                userUp.Password = resUser.Password;
+            }else{
+                userUp.Password = PasswordHasher.HashPassword(userUp.Password);
+            }
+            var user = _mapper.Map<User>(userUp);
+
             await _userRepository.UpdateAsync(user);
             await _unitOfWork.CompleteAsync();
         }

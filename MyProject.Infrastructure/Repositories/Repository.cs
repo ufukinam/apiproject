@@ -66,6 +66,7 @@ namespace MyProject.Infrastructure.Repositories
 
         public async Task UpdateAsync(T entity)
         {
+            _context.ChangeTracker.Clear();
             _dbSet.Update(entity);
         }
 

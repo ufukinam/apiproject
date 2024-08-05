@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyProject.Application.DTOs;
 using MyProject.Application.Services;
 using MyProject.Core.Entities;
 
@@ -47,14 +48,17 @@ namespace MyProject.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(Role role)
+        public async Task<IActionResult> Create(RoleDto role)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             await _roleService.AddRoleAsync(role);
             return CreatedAtAction(nameof(GetById), new { id = role.Id }, role);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Role role)
+        public async Task<IActionResult> Update(int id, RoleDto role)
         {
             if (id != role.Id)
             {

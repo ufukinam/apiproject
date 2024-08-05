@@ -34,14 +34,16 @@ namespace MyProject.Application.Services
             return await _roleRepository.GetAsync(filter: filter);
         }
 
-        public async Task AddRoleAsync(Role role)
+        public async Task AddRoleAsync(RoleDto roleDto)
         {
+            var role = _mapper.Map<Role>(roleDto);
             await _roleRepository.AddAsync(role);
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task UpdateRoleAsync(Role role)
+        public async Task UpdateRoleAsync(RoleDto roleDto)
         {
+            var role = _mapper.Map<Role>(roleDto);
             await _roleRepository.UpdateAsync(role);
             await _unitOfWork.CompleteAsync();
         }

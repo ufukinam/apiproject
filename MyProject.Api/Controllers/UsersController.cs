@@ -59,12 +59,13 @@ namespace MyProject.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, User user)
+        public async Task<IActionResult> Update(int id, UserUpdateDto user)
         {
             if (id != user.Id)
             {
                 return BadRequest();
             }
+
             await _userService.UpdateUserAsync(user);
             return NoContent();
         }
