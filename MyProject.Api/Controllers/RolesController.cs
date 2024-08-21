@@ -25,6 +25,13 @@ namespace MyProject.Api.Controllers
             return Ok(roles);
         }
 
+        [HttpGet("VisibleRoles")]
+        public async Task<IActionResult> GetVisibleRoles()
+        {
+            var roles = await _roleService.GetAllRolesAsync();
+            return Ok(roles);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
