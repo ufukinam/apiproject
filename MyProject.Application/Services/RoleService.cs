@@ -50,7 +50,7 @@ namespace MyProject.Application.Services
 
         public async Task DeleteRoleAsync(int id)
         {
-            var role = _roleRepository.GetByIdAsync(id);
+            var role = await _roleRepository.GetByIdAsync(id);
             
             if (role != null)
             {

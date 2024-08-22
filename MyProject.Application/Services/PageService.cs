@@ -50,7 +50,7 @@ namespace MyProject.Application.Services
 
         public async Task DeletePageAsync(int id)
         {
-            var page = _pageRepository.GetByIdAsync(id);
+            var page = await _pageRepository.GetByIdAsync(id);
             if (page != null)
             {
                 await _pageRepository.DeleteAsync(id);

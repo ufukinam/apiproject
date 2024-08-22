@@ -80,7 +80,7 @@ namespace MyProject.Application.Services
         public async Task<UserDto> AuthenticateAsync(string email, string password)
         {
             Expression<Func<User, bool>> filter = u => u.Email == email;
-            var users = await _userRepository.GetAsync(filter: filter);
+            var users = await _userRepository.GetAsync(filter: filter, includeProperties: "UserRoles");
             
             // If you have hashed passwords, you should compare the hashed values here
             // if (user != null && VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
