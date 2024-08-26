@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using MyProject.Core.Interfaces;
+using MyProject.Core.Models;
 using MyProject.Infrastructure.Data;
 
 namespace MyProject.Infrastructure.Repositories
@@ -70,40 +71,27 @@ namespace MyProject.Infrastructure.Repositories
             _dbSet.Update(entity);
         }
 
-        public async Task<(IEnumerable<T> Items, int TotalCount)> GetPaginatedAsync(
-            Expression<Func<T, bool>> filter = null,
-            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
-            string includeProperties = "", 
-            int pageNumber=1, int pageSize=10)
+        public IQueryable<T> GetQuery()
         {
-            IQueryable<T> query = _dbSet;
+            return _dbSet.AsQueryable();
+        }
 
-            if (filter != null)
-            {
-                query = query.Where(filter);
-            }
+        public async Task<PaginatedResult<T>> GetPaginatedAsync(
+            IQueryable<T> query,
+            int pageNumber = 1,
+            int pageSize = 10)
+        {
+            var totalItems = await query.CountAsync();
+            var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
 
-            foreach (var includeProperty in includeProperties.Split
-                (new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            return new PaginatedResult<T>
             {
-                query = query.Include(includeProperty);
-            }
-
-            if (orderBy != null)
-            {
-                
-                query = orderBy(query);
-                var totalCount = await query.CountAsync();
-                var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-
-                return (items, totalCount);
-            }
-            else
-            {
-                var totalCount = await query.CountAsync();
-                var items = await query.ToListAsync();
-                return (items, totalCount);
-            }
+                Items = items,
+                TotalItems = totalItems,
+                Page = pageNumber,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
+            };
         }
     }
 }

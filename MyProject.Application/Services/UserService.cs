@@ -1,9 +1,12 @@
 using System.Linq.Expressions;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MyProject.Application.DTOs;
+using MyProject.Application.Extensions;
 using MyProject.Application.Utils;
 using MyProject.Core.Entities;
 using MyProject.Core.Interfaces;
+using MyProject.Core.Models;
 
 namespace MyProject.Application.Services
 {
@@ -21,6 +24,17 @@ namespace MyProject.Application.Services
             Func<IQueryable<User>, IOrderedQueryable<User>> orderBy = q=> q.OrderBy(a=>a.Id);
             var result = await _userRepository.GetAsync(filter: filter, orderBy: orderBy);
             var usersDto = _mapper.Map<IEnumerable<UserDto>>(result);
+            return usersDto;
+        }
+
+        public async Task<PaginatedResult<UserDto>> GetPaginatedUsersAsync(int page, int pageSize, string sortBy, bool descending, string strFilter)
+        {
+            var query = _userRepository.GetQuery();
+            query = query.Where(u => u.IsDeleted == false && strFilter != null && (u.Name.Contains(strFilter, StringComparison.OrdinalIgnoreCase) || u.Email.Contains(strFilter, StringComparison.OrdinalIgnoreCase) || u.Surname.Contains(strFilter, StringComparison.OrdinalIgnoreCase)));
+            query = query.Include(u => u.UserRoles);
+            query = query.OrderByDynamic(sortBy, descending);
+            var result = await _userRepository.GetPaginatedAsync(query, page, pageSize);
+            var usersDto = _mapper.Map<PaginatedResult<UserDto>>(result);
             return usersDto;
         }
 
