@@ -1,6 +1,7 @@
 using AutoMapper;
 using MyProject.Application.DTOs;
 using MyProject.Core.Entities;
+using MyProject.Core.Models;
 
 namespace MyProject.Application.Mapping
 {
@@ -17,7 +18,8 @@ namespace MyProject.Application.Mapping
             CreateMap<Role, RoleDto>().ReverseMap();
             CreateMap<Page, PageDto>().ReverseMap();
             CreateMap<UserRole, UserRoleDto>().ReverseMap();
-            // Add other mappings here
+            CreateMap<PaginatedResult<User>, PaginatedResult<UserDto>>()
+                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items)).ReverseMap();
         }
     }
 }

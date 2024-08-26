@@ -9,8 +9,8 @@ namespace MyProject.Core.Models
     {
         public int Page { get; set; }
         public int RowsPerPage { get; set; }
-        public string? SortBy { get; set; }
-        public bool Descending { get; set; }
-        public string? StrFilter { get; set; }
+        public string? SortBy { get; set; } = "Id";
+        public bool Descending { get; set; } = false;
+        public string? StrFilter { get; set; } = "";
     }
 }

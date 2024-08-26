@@ -30,7 +30,17 @@ namespace MyProject.Application.Services
         public async Task<PaginatedResult<UserDto>> GetPaginatedUsersAsync(int page, int pageSize, string sortBy, bool descending, string strFilter)
         {
             var query = _userRepository.GetQuery();
-            query = query.Where(u => u.IsDeleted == false && strFilter != null && (u.Name.Contains(strFilter, StringComparison.OrdinalIgnoreCase) || u.Email.Contains(strFilter, StringComparison.OrdinalIgnoreCase) || u.Surname.Contains(strFilter, StringComparison.OrdinalIgnoreCase)));
+            if (!string.IsNullOrEmpty(strFilter))
+            {
+                query = query.Where(u => u.IsDeleted == false 
+                    && (EF.Functions.Like(u.Name, $"%{strFilter}%")
+                        || EF.Functions.Like(u.Surname, $"%{strFilter}%")
+                        || EF.Functions.Like(u.Email, $"%{strFilter}%")));
+            }
+            else
+            {
+                query = query.Where(u => u.IsDeleted == false);
+            }
             query = query.Include(u => u.UserRoles);
             query = query.OrderByDynamic(sortBy, descending);
             var result = await _userRepository.GetPaginatedAsync(query, page, pageSize);

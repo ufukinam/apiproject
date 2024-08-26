@@ -30,6 +30,7 @@ namespace MyProject.Api.Controllers
         [HttpGet("paginated")]
         public async Task<IActionResult> GetPaginated([FromQuery] PaginationInputModel paginationInputModel)
         {
+            Console.WriteLine("PaginationInputModel: " + paginationInputModel.Page + " " + paginationInputModel.RowsPerPage + " " + paginationInputModel.SortBy + " " + paginationInputModel.Descending + " " + paginationInputModel.StrFilter);
             var paginatedUsers = await _userService.GetPaginatedUsersAsync(paginationInputModel.Page, paginationInputModel.RowsPerPage, paginationInputModel.SortBy, paginationInputModel.Descending, paginationInputModel.StrFilter);
             return Ok(paginatedUsers);
         }
