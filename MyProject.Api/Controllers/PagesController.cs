@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MyProject.Application.DTOs;
 using MyProject.Application.Services;
 using MyProject.Core.Entities;
+using MyProject.Core.Models;
 
 namespace MyProject.Api.Controllers
 {
@@ -23,6 +24,13 @@ namespace MyProject.Api.Controllers
         {
             var pages = await _pageService.GetAllPagesAsync();
             return Ok(pages);
+        }
+
+        [HttpGet("paginated")]
+        public async Task<IActionResult> GetPaginated([FromQuery] PaginationInputModel paginationInputModel)
+        {
+            var paginatedUsers = await _pageService.GetPaginatedPagesAsync(paginationInputModel.Page, paginationInputModel.RowsPerPage, paginationInputModel.SortBy, paginationInputModel.Descending, paginationInputModel.StrFilter);
+            return Ok(paginatedUsers);
         }
 
         [HttpGet("{id}")]

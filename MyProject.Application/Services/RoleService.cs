@@ -1,8 +1,11 @@
 using System.Linq.Expressions;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MyProject.Application.DTOs;
+using MyProject.Application.Extensions;
 using MyProject.Core.Entities;
 using MyProject.Core.Interfaces;
+using MyProject.Core.Models;
 
 namespace MyProject.Application.Services
 {
@@ -21,6 +24,24 @@ namespace MyProject.Application.Services
             var result = await _roleRepository.GetAsync(filter: filter, orderBy: orderBy);
             var rolesDto = _mapper.Map<IEnumerable<RoleDto>>(result);
             return rolesDto;
+        }
+        public async Task<PaginatedResult<RoleDto>> GetPaginatedRolesAsync(int page, int pageSize, string sortBy, bool descending, string strFilter)
+        {
+            var query = _roleRepository.GetQuery();
+            if (!string.IsNullOrEmpty(strFilter))
+            {
+                query = query.Where(u => u.IsDeleted == false 
+                    && (EF.Functions.Like(u.Name, $"%{strFilter}%")));
+            }
+            else
+            {
+                query = query.Where(u => u.IsDeleted == false);
+            }
+            query = query.Include(u => u.UserRoles);
+            query = query.OrderByDynamic(sortBy, descending);
+            var result = await _roleRepository.GetPaginatedAsync(query, page, pageSize);
+            var roleDto = _mapper.Map<PaginatedResult<RoleDto>>(result);
+            return roleDto;
         }
 
         public async Task<Role> GetRoleByIdAsync(int id)

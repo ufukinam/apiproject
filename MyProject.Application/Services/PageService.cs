@@ -1,8 +1,11 @@
 using System.Linq.Expressions;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MyProject.Application.DTOs;
+using MyProject.Application.Extensions;
 using MyProject.Core.Entities;
 using MyProject.Core.Interfaces;
+using MyProject.Core.Models;
 
 namespace MyProject.Application.Services
 {
@@ -21,6 +24,23 @@ namespace MyProject.Application.Services
             var result = await _pageRepository.GetAsync(filter: filter, orderBy: orderBy);
             var pagesDto = _mapper.Map<IEnumerable<PageDto>>(result);
             return pagesDto;
+        }
+        public async Task<PaginatedResult<PageDto>> GetPaginatedPagesAsync(int page, int pageSize, string sortBy, bool descending, string strFilter)
+        {
+            var query = _pageRepository.GetQuery();
+            if (!string.IsNullOrEmpty(strFilter))
+            {
+                query = query.Where(u => u.IsDeleted == false 
+                    && (EF.Functions.Like(u.Name, $"%{strFilter}%")));
+            }
+            else
+            {
+                query = query.Where(u => u.IsDeleted == false);
+            }
+            query = query.OrderByDynamic(sortBy, descending);
+            var result = await _pageRepository.GetPaginatedAsync(query, page, pageSize);
+            var pageDto = _mapper.Map<PaginatedResult<PageDto>>(result);
+            return pageDto;
         }
 
         public async Task<Page> GetPageByIdAsync(int id)

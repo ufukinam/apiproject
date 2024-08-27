@@ -20,6 +20,10 @@ namespace MyProject.Application.Mapping
             CreateMap<UserRole, UserRoleDto>().ReverseMap();
             CreateMap<PaginatedResult<User>, PaginatedResult<UserDto>>()
                 .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items)).ReverseMap();
+            CreateMap<PaginatedResult<Role>, PaginatedResult<RoleDto>>()
+                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items)).ReverseMap();
+            CreateMap<PaginatedResult<Page>, PaginatedResult<PageDto>>()
+                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items)).ReverseMap();
         }
     }
 }

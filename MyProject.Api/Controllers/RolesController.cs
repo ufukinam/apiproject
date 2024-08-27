@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MyProject.Application.DTOs;
 using MyProject.Application.Services;
 using MyProject.Core.Entities;
+using MyProject.Core.Models;
 
 namespace MyProject.Api.Controllers
 {
@@ -53,6 +54,14 @@ namespace MyProject.Api.Controllers
             }
             return Ok(role);
         }
+        
+        [HttpGet("paginated")]
+        public async Task<IActionResult> GetPaginated([FromQuery] PaginationInputModel paginationInputModel)
+        {
+            var paginatedUsers = await _roleService.GetPaginatedRolesAsync(paginationInputModel.Page, paginationInputModel.RowsPerPage, paginationInputModel.SortBy, paginationInputModel.Descending, paginationInputModel.StrFilter);
+            return Ok(paginatedUsers);
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> Create(RoleDto role)
