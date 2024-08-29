@@ -22,43 +22,52 @@ namespace MyProject.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var pages = await _pageService.GetAllPagesAsync();
-            return Ok(pages);
+            var result = await _pageService.GetAllPagesAsync();
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpGet("paginated")]
         public async Task<IActionResult> GetPaginated([FromQuery] PaginationInputModel paginationInputModel)
         {
-            var paginatedUsers = await _pageService.GetPaginatedPagesAsync(paginationInputModel.Page, paginationInputModel.RowsPerPage, paginationInputModel.SortBy, paginationInputModel.Descending, paginationInputModel.StrFilter);
-            return Ok(paginatedUsers);
+            var result = await _pageService.GetPaginatedPagesAsync(paginationInputModel.Page, paginationInputModel.RowsPerPage, paginationInputModel.SortBy ?? string.Empty, paginationInputModel.Descending, paginationInputModel.StrFilter ?? string.Empty);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var page = await _pageService.GetPageByIdAsync(id);
-            if (page == null)
+            var result = await _pageService.GetPageByIdAsync(id);
+            if (!result.Success)
             {
                 return NotFound();
             }
-            return Ok(page);
+            return Ok(result);
         }
 
         [HttpGet("{id}/pages")]
         public async Task<IActionResult> GetPagesByPageId(int id)
         {
-            var page = await _pageService.GetPagesByRoleIdAsync(id);
-            if (page == null)
+            var result = await _pageService.GetPagesByRoleIdAsync(id);
+            if (!result.Success)
             {
                 return NotFound();
             }
-            return Ok(page);
+            return Ok(result);
         }
 
         [HttpPost]
         public async Task<IActionResult> Create(PageDto page)
         {
-            await _pageService.AddPageAsync(page);
+            var result = await _pageService.AddPageAsync(page);
+            if (!result.Success)
+                return BadRequest(result);
+
             return CreatedAtAction(nameof(GetById), new { id = page.Id }, page);
         }
 
@@ -67,17 +76,23 @@ namespace MyProject.Api.Controllers
         {
             if (id != page.Id)
             {
-                return BadRequest();
+                return BadRequest(ServiceResult<object>.FailureResult("ID mismatch"));
             }
-            await _pageService.UpdatePageAsync(page);
-            return NoContent();
+            var result = await _pageService.UpdatePageAsync(page);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _pageService.DeletePageAsync(id);
-            return NoContent();
+            var result = await _pageService.DeletePageAsync(id);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
     }
 }

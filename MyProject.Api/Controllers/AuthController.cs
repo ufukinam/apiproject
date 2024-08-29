@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MyProject.Application;
 using MyProject.Application.DTOs;
 using MyProject.Application.Services;
+using MyProject.Core.Models;
 
 namespace MyProject.Api.Controllers
 {
@@ -22,50 +23,33 @@ namespace MyProject.Api.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginDto model)
         {
-            Console.WriteLine($"Received login request: Email={model.Email}, Password={model.Password}");
             if (!ModelState.IsValid)
-            {
-                foreach (var modelState in ModelState.Values)
-                {
-                    foreach (var error in modelState.Errors)
-                    {
-                        Console.WriteLine($"ModelState error: {error.ErrorMessage}");
-                    }
-                }
-                return BadRequest(ModelState);
-            }
+                return BadRequest(ServiceResult<object>.FailureResult("Invalid model state", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()));
 
+            var result = await _userService.AuthenticateAsync(model.Email, model.Password);
 
-            var userDto = await _userService.AuthenticateAsync(model.Email, model.Password);
+            if (!result.Success)
+                return Unauthorized(result);
 
-            if (userDto == null)
-                return Unauthorized();
+            var token = _jwtHelper.GenerateJwtToken(result.Data.Id.ToString(), result.Data.Email);
 
-            var token = _jwtHelper.GenerateJwtToken(userDto.Id.ToString(), userDto.Email);
-
-            return Ok(new { Token = token, User = userDto });
+            return Ok(ServiceResult<object>.SuccessResult(new { Token = token, User = result.Data }));
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] UserRegisterDto model)
         {
-            Console.WriteLine($"Received login request: Email={model.Email}, Password={model.Password}");
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(ServiceResult<object>.FailureResult("Invalid model state", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()));
 
-            var userDto = await _userService.RegisterAsync(model);
+            var result = await _userService.RegisterAsync(model);
 
-            var token = _jwtHelper.GenerateJwtToken(userDto.Id.ToString(), userDto.Email);
+            if (!result.Success)
+                return BadRequest(result);
+    
+            var token = _jwtHelper.GenerateJwtToken(result.Data.Id.ToString(), result.Data.Email);
 
-            return Ok(new { Token = token, User = userDto });
-        }
-
-        [HttpGet("roles")]
-        [Authorize]
-        public async Task<IActionResult> Roles()
-        {
-            var roles = "Admin";
-            return Ok(new { Role = roles});
+            return Ok(ServiceResult<object>.SuccessResult(new { Token = token, User = result.Data }));
         }
     }
 }

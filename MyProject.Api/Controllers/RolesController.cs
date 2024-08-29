@@ -22,26 +22,31 @@ namespace MyProject.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var roles = await _roleService.GetAllRolesAsync();
-            return Ok(roles);
+            var result = await _roleService.GetAllRolesAsync();
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpGet("VisibleRoles")]
         public async Task<IActionResult> GetVisibleRoles()
         {
-            var roles = await _roleService.GetAllRolesAsync();
-            return Ok(roles);
+            var result = await _roleService.GetAllRolesAsync();
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var role = await _roleService.GetRoleByIdAsync(id);
-            if (role == null)
-            {
-                return NotFound();
-            }
-            return Ok(role);
+            var result = await _roleService.GetRoleByIdAsync(id);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpGet("{id}/roles")]
@@ -58,8 +63,11 @@ namespace MyProject.Api.Controllers
         [HttpGet("paginated")]
         public async Task<IActionResult> GetPaginated([FromQuery] PaginationInputModel paginationInputModel)
         {
-            var paginatedUsers = await _roleService.GetPaginatedRolesAsync(paginationInputModel.Page, paginationInputModel.RowsPerPage, paginationInputModel.SortBy, paginationInputModel.Descending, paginationInputModel.StrFilter);
-            return Ok(paginatedUsers);
+            var result = await _roleService.GetPaginatedRolesAsync(paginationInputModel.Page, paginationInputModel.RowsPerPage, paginationInputModel.SortBy ?? string.Empty, paginationInputModel.Descending, paginationInputModel.StrFilter ?? string.Empty);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
 
@@ -68,8 +76,11 @@ namespace MyProject.Api.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+    
+            var result = await _roleService.AddRoleAsync(role);
+            if (!result.Success)
+                return BadRequest(result);
 
-            await _roleService.AddRoleAsync(role);
             return CreatedAtAction(nameof(GetById), new { id = role.Id }, role);
         }
 
@@ -78,17 +89,23 @@ namespace MyProject.Api.Controllers
         {
             if (id != role.Id)
             {
-                return BadRequest();
+                return BadRequest(ServiceResult<object>.FailureResult("ID mismatch"));
             }
-            await _roleService.UpdateRoleAsync(role);
-            return NoContent();
+            var result = await _roleService.UpdateRoleAsync(role);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _roleService.DeleteRoleAsync(id);
-            return NoContent();
+            var result = await _roleService.DeleteRoleAsync(id);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
     }
 }

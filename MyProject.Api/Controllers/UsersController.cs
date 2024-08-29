@@ -23,27 +23,31 @@ namespace MyProject.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var users = await _userService.GetAllUsersAsync();
-            return Ok(users);
+            var result = await _userService.GetAllUsersAsync();
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpGet("paginated")]
         public async Task<IActionResult> GetPaginated([FromQuery] PaginationInputModel paginationInputModel)
         {
-            Console.WriteLine("PaginationInputModel: " + paginationInputModel.Page + " " + paginationInputModel.RowsPerPage + " " + paginationInputModel.SortBy + " " + paginationInputModel.Descending + " " + paginationInputModel.StrFilter);
-            var paginatedUsers = await _userService.GetPaginatedUsersAsync(paginationInputModel.Page, paginationInputModel.RowsPerPage, paginationInputModel.SortBy, paginationInputModel.Descending, paginationInputModel.StrFilter);
-            return Ok(paginatedUsers);
+            var result = await _userService.GetPaginatedUsersAsync(paginationInputModel.Page, paginationInputModel.RowsPerPage, paginationInputModel.SortBy ?? string.Empty, paginationInputModel.Descending, paginationInputModel.StrFilter ?? string.Empty);
+           if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var user = await _userService.GetUserByIdAsync(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-            return Ok(user);
+            var result = await _userService.GetUserByIdAsync(id);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpGet("{id}/roles")]
@@ -61,29 +65,39 @@ namespace MyProject.Api.Controllers
         public async Task<IActionResult> Create(UserRegisterDto user)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(ServiceResult<object>.FailureResult("Invalid model state", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()));
 
-            var regUser = await _userService.RegisterAsync(user);
-            return Ok(new { User = regUser });
+            var result = await _userService.RegisterAsync(user);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return CreatedAtAction(nameof(GetById), new { id = result.Data.Id }, result);
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, UserUpdateDto user)
         {
-            if (id != user.Id)
-            {
-                return BadRequest();
-            }
+            if (!ModelState.IsValid)
+                return BadRequest(ServiceResult<object>.FailureResult("Invalid model state", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()));
+        
+            if (id != user.Id) 
+                return BadRequest(ServiceResult<object>.FailureResult("ID mismatch"));
 
-            await _userService.UpdateUserAsync(user);
-            return NoContent();
+            var result = await _userService.UpdateUserAsync(user);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _userService.DeleteUserAsync(id);
-            return NoContent();
+            var result = await _userService.DeleteUserAsync(id);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
         
     }

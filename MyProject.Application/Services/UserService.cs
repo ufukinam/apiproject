@@ -18,16 +18,16 @@ namespace MyProject.Application.Services
             _userRepository = _unitOfWork.GetRepository<User>();
         }
 
-        public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
+        public async Task<ServiceResult<IEnumerable<UserDto>>> GetAllUsersAsync()
         {
             Expression<Func<User, bool>> filter = u => u.IsDeleted == false;
             Func<IQueryable<User>, IOrderedQueryable<User>> orderBy = q=> q.OrderBy(a=>a.Id);
             var result = await _userRepository.GetAsync(filter: filter, orderBy: orderBy);
             var usersDto = _mapper.Map<IEnumerable<UserDto>>(result);
-            return usersDto;
+            return ServiceResult<IEnumerable<UserDto>>.SuccessResult(usersDto);
         }
 
-        public async Task<PaginatedResult<UserDto>> GetPaginatedUsersAsync(int page, int pageSize, string sortBy, bool descending, string strFilter)
+        public async Task<ServiceResult<PaginatedResult<UserDto>>> GetPaginatedUsersAsync(int page, int pageSize, string sortBy, bool descending, string strFilter)
         {
             var query = _userRepository.GetQuery();
             if (!string.IsNullOrEmpty(strFilter))
@@ -45,12 +45,18 @@ namespace MyProject.Application.Services
             query = query.OrderByDynamic(sortBy, descending);
             var result = await _userRepository.GetPaginatedAsync(query, page, pageSize);
             var usersDto = _mapper.Map<PaginatedResult<UserDto>>(result);
-            return usersDto;
+            return ServiceResult<PaginatedResult<UserDto>>.SuccessResult(usersDto);
         }
 
-        public async Task<User> GetUserByIdAsync(int id)
+        public async Task<ServiceResult<UserDto>> GetUserByIdAsync(int id)
         {
-            return await _userRepository.GetByIdAsync(id);
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+            {
+                return ServiceResult<UserDto>.FailureResult("User not found");
+            }
+            var userDto = _mapper.Map<UserDto>(user);
+            return ServiceResult<UserDto>.SuccessResult(userDto);
         }
 
         public async Task<IEnumerable<User>> GetUsersByRoleIdAsync(int roleId)
@@ -59,67 +65,106 @@ namespace MyProject.Application.Services
             return await _userRepository.GetAsync(filter: filter);
         }
 
-        public async Task AddUserAsync(User user)
+        public async Task<ServiceResult<UserDto>> AddUserAsync(UserRegisterDto userDto)
         {
+            var existingUser = await _userRepository.GetAsync(u => u.Email == userDto.Email);
+            if (existingUser.Any())
+            {
+                return ServiceResult<UserDto>.FailureResult("User with this email already exists");
+            }
+
+            var user = _mapper.Map<User>(userDto);
+            user.Password = PasswordHasher.HashPassword(userDto.Password);
+
             await _userRepository.AddAsync(user);
             await _unitOfWork.CompleteAsync();
+
+            var createdUserDto = _mapper.Map<UserDto>(user);
+            return ServiceResult<UserDto>.SuccessResult(createdUserDto);
         }
 
-        public async Task UpdateUserAsync(UserUpdateDto userUp)
+        public async Task<ServiceResult<UserDto>> UpdateUserAsync(UserUpdateDto userUpdateDto)
         {
-            if(userUp.Password==null || userUp.Password==""){
-                var resUser = await _userRepository.GetByIdAsync(userUp.Id);
-                userUp.Password = resUser.Password;
-            }else{
-                userUp.Password = PasswordHasher.HashPassword(userUp.Password);
+            var existingUser = await _userRepository.GetByIdAsync(userUpdateDto.Id);
+            if (existingUser == null)
+            {
+                return ServiceResult<UserDto>.FailureResult("User not found");
             }
-            var user = _mapper.Map<User>(userUp);
 
+            if (string.IsNullOrEmpty(userUpdateDto.Password))
+            {
+                userUpdateDto.Password = existingUser.Password;
+            }
+            else
+            {
+                userUpdateDto.Password = PasswordHasher.HashPassword(userUpdateDto.Password);
+            }
+
+            var user = _mapper.Map<User>(userUpdateDto);
             await _userRepository.UpdateAsync(user);
             await _unitOfWork.CompleteAsync();
+
+            var updatedUserDto = _mapper.Map<UserDto>(user);
+            return ServiceResult<UserDto>.SuccessResult(updatedUserDto);
         }
 
-        public async Task DeleteUserAsync(int id)
+        public async Task<ServiceResult<bool>> DeleteUserAsync(int id)
         {
             var user = await _userRepository.GetByIdAsync(id);
-            if (user != null)
+            if (user == null)
             {
-                await _userRepository.DeleteAsync(id);
-                await _unitOfWork.CompleteAsync();
+                return ServiceResult<bool>.FailureResult("User not found");
             }
+
+            await _userRepository.DeleteAsync(id);
+            await _unitOfWork.CompleteAsync();
+
+            return ServiceResult<bool>.SuccessResult(true);
         }
 
-        public async Task<UserDto> RegisterAsync(UserRegisterDto registerDto)
+        public async Task<ServiceResult<UserDto>> RegisterAsync(UserRegisterDto registerDto)
         {
+            //get user by email
+            Expression<Func<User, bool>> filter = u => u.Email == registerDto.Email;
+            var users = await _userRepository.GetAsync(filter: filter);
+
+            //check if user exists
+            if (users.Any()){
+                return ServiceResult<UserDto>.FailureResult("User already exists");
+            }
+
+            //map dto to user
             var user = _mapper.Map<User>(registerDto);
 
+            //hash password
             user.Password = PasswordHasher.HashPassword(registerDto.Password);
 
             await _userRepository.AddAsync(user);
             await _unitOfWork.CompleteAsync();
 
-            return _mapper.Map<UserDto>(user);
+            return ServiceResult<UserDto>.SuccessResult(_mapper.Map<UserDto>(user));
         }
 
-        public async Task<UserDto> AuthenticateAsync(string email, string password)
+        public async Task<ServiceResult<UserDto>> AuthenticateAsync(string email, string password)
         {
-            Expression<Func<User, bool>> filter = u => u.Email == email;
+            //get user by email
+            Expression<Func<User, bool>> filter = u => u.Email == email && u.IsDeleted == false;
             var users = await _userRepository.GetAsync(filter: filter, includeProperties: "UserRoles");
             
-            // If you have hashed passwords, you should compare the hashed values here
-            // if (user != null && VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
-
-             // Verify the hashed password
-            if (users != null && users.Count()!=0)
+            //check if user exists
+            if (!users.Any())
             {
-                var user = users.FirstOrDefault();
-                if(PasswordHasher.VerifyPassword(password, user!.Password))
-                {
-                    return _mapper.Map<UserDto>(user);
-                }
+                return ServiceResult<UserDto>.FailureResult("Authentication failed");
             }
-
-            return null;
+            //check if password is correct
+            var user = users.Single();
+            if(PasswordHasher.VerifyPassword(password, user!.Password))
+            {
+                //if password is correct
+                return ServiceResult<UserDto>.SuccessResult(_mapper.Map<UserDto>(user));
+            }
+            //if password is not correct
+            return ServiceResult<UserDto>.FailureResult("Authentication failed");
         }
     }
 }

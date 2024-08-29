@@ -17,15 +17,15 @@ namespace MyProject.Application.Services
             _roleRepository = _unitOfWork.GetRepository<Role>();
         }
 
-        public async Task<IEnumerable<RoleDto>> GetAllRolesAsync()
+        public async Task<ServiceResult<IEnumerable<RoleDto>>> GetAllRolesAsync()
         {
             Expression<Func<Role, bool>> filter = u => u.IsDeleted == false;
             Func<IQueryable<Role>, IOrderedQueryable<Role>> orderBy = q=> q.OrderBy(a=>a.Id);
             var result = await _roleRepository.GetAsync(filter: filter, orderBy: orderBy);
             var rolesDto = _mapper.Map<IEnumerable<RoleDto>>(result);
-            return rolesDto;
+            return ServiceResult<IEnumerable<RoleDto>>.SuccessResult(rolesDto);
         }
-        public async Task<PaginatedResult<RoleDto>> GetPaginatedRolesAsync(int page, int pageSize, string sortBy, bool descending, string strFilter)
+        public async Task<ServiceResult<PaginatedResult<RoleDto>>> GetPaginatedRolesAsync(int page, int pageSize, string sortBy, bool descending, string strFilter)
         {
             var query = _roleRepository.GetQuery();
             if (!string.IsNullOrEmpty(strFilter))
@@ -41,12 +41,18 @@ namespace MyProject.Application.Services
             query = query.OrderByDynamic(sortBy, descending);
             var result = await _roleRepository.GetPaginatedAsync(query, page, pageSize);
             var roleDto = _mapper.Map<PaginatedResult<RoleDto>>(result);
-            return roleDto;
+            return ServiceResult<PaginatedResult<RoleDto>>.SuccessResult(roleDto);
         }
 
-        public async Task<Role> GetRoleByIdAsync(int id)
+        public async Task<ServiceResult<RoleDto>> GetRoleByIdAsync(int id)
         {
-            return await _roleRepository.GetByIdAsync(id);
+            var role = await _roleRepository.GetByIdAsync(id);
+            if (role == null)
+            {
+                return ServiceResult<RoleDto>.FailureResult("Role not found");
+            }
+            var roleDto = _mapper.Map<RoleDto>(role);
+            return ServiceResult<RoleDto>.SuccessResult(roleDto);
         }
 
         public async Task<IEnumerable<Role>> GetRolesByUserIdAsync(int userId)
@@ -55,29 +61,44 @@ namespace MyProject.Application.Services
             return await _roleRepository.GetAsync(filter: filter);
         }
 
-        public async Task AddRoleAsync(RoleDto roleDto)
+        public async Task<ServiceResult<RoleDto>> AddRoleAsync(RoleDto roleDto)
         {
+            var existingRole = await _roleRepository.GetAsync(u => u.Name == roleDto.Name);
+            if (existingRole.Any())
+            {
+                return ServiceResult<RoleDto>.FailureResult("Role with this name already exists");
+            }
             var role = _mapper.Map<Role>(roleDto);
             await _roleRepository.AddAsync(role);
             await _unitOfWork.CompleteAsync();
+            var createdRoleDto = _mapper.Map<RoleDto>(role);
+            return ServiceResult<RoleDto>.SuccessResult(createdRoleDto);
         }
 
-        public async Task UpdateRoleAsync(RoleDto roleDto)
+        public async Task<ServiceResult<RoleDto>> UpdateRoleAsync(RoleDto roleDto)
         {
+            var existingRole = await _roleRepository.GetByIdAsync(roleDto.Id);
+            if (existingRole == null)
+            {
+                return ServiceResult<RoleDto>.FailureResult("Role not found");
+            }
             var role = _mapper.Map<Role>(roleDto);
             await _roleRepository.UpdateAsync(role);
             await _unitOfWork.CompleteAsync();
+            var updatedRoleDto = _mapper.Map<RoleDto>(role);
+            return ServiceResult<RoleDto>.SuccessResult(updatedRoleDto);
         }
 
-        public async Task DeleteRoleAsync(int id)
+        public async Task<ServiceResult<bool>> DeleteRoleAsync(int id)
         {
             var role = await _roleRepository.GetByIdAsync(id);
-            
-            if (role != null)
+            if (role == null)
             {
-                await _roleRepository.DeleteAsync(id);
-                await _unitOfWork.CompleteAsync();
+                return ServiceResult<bool>.FailureResult("Role not found");
             }
+            await _roleRepository.DeleteAsync(id);
+            await _unitOfWork.CompleteAsync();
+            return ServiceResult<bool>.SuccessResult(true);
         }
     }
 }
